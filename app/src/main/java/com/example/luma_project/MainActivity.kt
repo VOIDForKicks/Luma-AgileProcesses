@@ -1,12 +1,14 @@
-
 package com.example.luma_project
 
 import android.os.Bundle
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 
 class MainActivity : ComponentActivity() {
@@ -15,10 +17,71 @@ class MainActivity : ComponentActivity() {
 
         setContent {
             MaterialTheme {
-                Surface(
-                    modifier = Modifier
-                ) {
-                    HomeScreen()
+                Surface(modifier = Modifier.fillMaxSize()) {
+                    var currentScreen by remember { mutableStateOf("home") }
+                    var showTransactionPanel by remember { mutableStateOf(false) }
+
+                    val navigate: (String) -> Unit = { currentScreen = it }
+
+                    // System back button returns to Home from any other screen
+                    BackHandler(enabled = currentScreen != "home") {
+                        currentScreen = "home"
+                    }
+
+                    Box(modifier = Modifier.fillMaxSize()) {
+                        when (currentScreen) {
+                            "transactions" -> TransactionsScreen(
+                                onAddClick = { showTransactionPanel = true },
+                                onNavigateToInsights = { currentScreen = "insights" },
+                                onNavigate = navigate
+                            )
+
+                            "income" -> IncomeScreen(
+                                onBackClick = { currentScreen = "home" },
+                                onNavigate = navigate
+                            )
+
+                            "expenses" -> ExpensesScreen(
+                                onBackClick = { currentScreen = "home" },
+                                onNavigate = navigate
+                            )
+
+                            "insights" -> InsightsScreen(
+                                onNavigateToIncome = { currentScreen = "income" },
+                                onNavigateToExpenses = { currentScreen = "expenses" },
+                                onNavigateToAccounts = { currentScreen = "accounts" },
+                                onBackClick = { currentScreen = "home" },
+                                onNavigate = navigate
+                            )
+
+                            "accounts" -> AccountsScreen(
+                                netWorth = "123,456",
+                                accounts = listOf(
+                                    Account("Checking", "12,345"),
+                                    Account("Savings", "12,345"),
+                                    Account("Credit Card", "12,345"),
+                                    Account("Investments", "12,345"),
+                                    Account("Cash", "12,345"),
+                                ),
+                                onBackClick = { currentScreen = "home" },
+                                onNavigate = navigate
+                            )
+
+                            else -> HomeScreen(
+                                onNavigateToIncome = { currentScreen = "income" },
+                                onNavigateToExpenses = { currentScreen = "expenses" },
+                                onNavigateToInsights = { currentScreen = "insights" },
+                                onNavigate = navigate
+                            )
+                        }
+
+                        // Add-transaction form slides in over whichever screen is showing.
+                        // Placed after the BackHandler above so it takes priority.
+                        TransactionsSidePanel(
+                            visible = showTransactionPanel,
+                            onDismiss = { showTransactionPanel = false }
+                        )
+                    }
                 }
             }
         }
