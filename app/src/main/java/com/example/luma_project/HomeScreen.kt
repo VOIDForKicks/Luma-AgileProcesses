@@ -3,6 +3,7 @@ package com.example.luma_project
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
@@ -18,8 +19,12 @@ import androidx.compose.ui.unit.sp
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun HomeScreen() {
-
+fun HomeScreen(
+    onNavigateToIncome: () -> Unit = {},
+    onNavigateToExpenses: () -> Unit = {},
+    onNavigateToInsights: () -> Unit = {},
+    onNavigate: (String) -> Unit = {},
+) {
     val black = Color(0xFF222222)
     val grey = Color(0xFF888888)
 
@@ -42,53 +47,12 @@ fun HomeScreen() {
                         modifier = Modifier.padding(start = 16.dp)
                     )
                 },
-                actions = {
-                    Text(
-                        text = "",
-                        fontSize = 20.sp,
-                        modifier = Modifier.padding(end = 16.dp)
-                    )
-                },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = Color.White
                 )
             )
         },
-
-        bottomBar = {
-            NavigationBar(
-                containerColor = Color.White
-            ) {
-                NavigationBarItem(
-                    selected = true,
-                    onClick = {},
-                    icon = { Text("◆", fontSize = 23.sp) },
-                    label = { Text("Home") }
-                )
-
-                NavigationBarItem(
-                    selected = false,
-                    onClick = {},
-                    icon = { Text("⌕", fontSize = 25.sp) },
-                    label = { Text("Search") }
-                )
-
-                NavigationBarItem(
-                    selected = false,
-                    onClick = {},
-                    icon = { Text("⇄", fontSize = 24.sp) },
-                    label = { Text("Activity") }
-                )
-
-                NavigationBarItem(
-                    selected = false,
-                    onClick = {},
-                    icon = { Text("▱", fontSize = 24.sp) },
-                    label = { Text("Cards") }
-                )
-            }
-        },
-
+        bottomBar = { AppBottomBar("home", onNavigate) },
         containerColor = Color.White
     ) { innerPadding ->
 
@@ -114,11 +78,12 @@ fun HomeScreen() {
 
             Spacer(modifier = Modifier.height(38.dp))
 
-            // AI Summary card
+            // AI Summary card (opens Insights)
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(151.dp)
+                    .clickable { onNavigateToInsights() }
                     .border(
                         width = 1.dp,
                         color = Color.LightGray.copy(alpha = 0.6f),
@@ -166,8 +131,8 @@ fun HomeScreen() {
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceEvenly
             ) {
-                HomeButton("Income")
-                HomeButton("Expenditure")
+                HomeButton("Income", onNavigateToIncome)
+                HomeButton("Expenditure", onNavigateToExpenses)
             }
         }
     }
@@ -252,7 +217,6 @@ fun MonthSoFarChartCard() {
 // Summary item
 @Composable
 fun SummaryItem(title: String, amount: String) {
-
     Column {
         Text(
             text = title,
@@ -271,10 +235,9 @@ fun SummaryItem(title: String, amount: String) {
 
 // Home buttons
 @Composable
-fun HomeButton(text: String) {
-
+fun HomeButton(text: String, onClick: () -> Unit = {}) {
     Button(
-        onClick = {},
+        onClick = onClick,
         colors = ButtonDefaults.buttonColors(
             containerColor = Color(0xFF292929)
         ),
