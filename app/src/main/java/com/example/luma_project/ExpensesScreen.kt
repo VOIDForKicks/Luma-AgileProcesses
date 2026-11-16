@@ -24,7 +24,10 @@ data class ExpenseModel(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ExpensesScreen(onBackClick: () -> Unit = {}) {
+fun ExpensesScreen(
+    onBackClick: () -> Unit = {},
+    onNavigate: (String) -> Unit = {},
+) {
     val black = Color(0xFF222222)
     val grey = Color(0xFF888888)
 
@@ -62,6 +65,7 @@ fun ExpensesScreen(onBackClick: () -> Unit = {}) {
                 )
             )
         },
+        bottomBar = { AppBottomBar("home", onNavigate) },
         containerColor = Color.White
     ) { innerPadding ->
         Column(

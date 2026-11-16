@@ -20,7 +20,9 @@ import androidx.compose.ui.unit.sp
 fun InsightsScreen(
     onNavigateToIncome: () -> Unit = {},
     onNavigateToExpenses: () -> Unit = {},
-    onBackClick: () -> Unit = {}
+    onNavigateToAccounts: () -> Unit = {},
+    onBackClick: () -> Unit = {},
+    onNavigate: (String) -> Unit = {}
 ) {
     val black = Color(0xFF222222)
     val grey = Color(0xFF888888)
@@ -51,36 +53,7 @@ fun InsightsScreen(
                 )
             )
         },
-        bottomBar = {
-            NavigationBar(
-                containerColor = Color.White
-            ) {
-                NavigationBarItem(
-                    selected = false,
-                    onClick = onBackClick,
-                    icon = { Text("⌂", fontSize = 23.sp) },
-                    label = { Text("Home") }
-                )
-                NavigationBarItem(
-                    selected = false,
-                    onClick = {},
-                    icon = { Text("⌕", fontSize = 25.sp) },
-                    label = { Text("Search") }
-                )
-                NavigationBarItem(
-                    selected = true,
-                    onClick = {},
-                    icon = { Text("⇄", fontSize = 24.sp) },
-                    label = { Text("Activity") }
-                )
-                NavigationBarItem(
-                    selected = false,
-                    onClick = {},
-                    icon = { Text("▱", fontSize = 24.sp) },
-                    label = { Text("Cards") }
-                )
-            }
-        },
+        bottomBar = { AppBottomBar("insights", onNavigate) },
         containerColor = Color.White
     ) { innerPadding ->
         Column(

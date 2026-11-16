@@ -24,7 +24,10 @@ data class IncomeModel(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun IncomeScreen(onBackClick: () -> Unit = {}) {
+fun IncomeScreen(
+    onBackClick: () -> Unit = {},
+    onNavigate: (String) -> Unit = {},
+) {
     val black = Color(0xFF222222)
     val grey = Color(0xFF888888)
 
@@ -59,6 +62,7 @@ fun IncomeScreen(onBackClick: () -> Unit = {}) {
                 )
             )
         },
+        bottomBar = { AppBottomBar("home", onNavigate) },
         containerColor = Color.White
     ) { innerPadding ->
         Column(
