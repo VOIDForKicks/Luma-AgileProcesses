@@ -18,16 +18,15 @@ class MainActivity : ComponentActivity() {
                 Surface(
                     modifier = Modifier.fillMaxSize()
                 ) {
-                    var selectedTransaction by remember { mutableStateOf<TransactionItemModel?>(null) }
+                    var currentScreen by remember { mutableStateOf("insights") }
 
-                    if (selectedTransaction != null) {
-                        TransactionInfoScreen(
-                            transaction = selectedTransaction!!,
-                            onBackClick = { selectedTransaction = null }
-                        )
-                    } else {
-                        TransactionsScreen(
-                            onTransactionClick = { tx -> selectedTransaction = tx }
+                    when (currentScreen) {
+                        "income" -> IncomeScreen(onBackClick = { currentScreen = "insights" })
+                        "expenses" -> ExpensesScreen(onBackClick = { currentScreen = "insights" })
+                        else -> InsightsScreen(
+                            onNavigateToIncome = { currentScreen = "income" },
+                            onNavigateToExpenses = { currentScreen = "expenses" },
+                            onBackClick = { currentScreen = "insights" }
                         )
                     }
                 }
