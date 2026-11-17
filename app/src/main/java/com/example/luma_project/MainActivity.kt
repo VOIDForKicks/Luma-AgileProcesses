@@ -1,3 +1,4 @@
+
 package com.example.luma_project
 
 import android.os.Bundle
@@ -12,45 +13,87 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 
 class MainActivity : ComponentActivity() {
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
         setContent {
             MaterialTheme {
-                Surface(modifier = Modifier.fillMaxSize()) {
-                    var currentScreen by remember { mutableStateOf("home") }
-                    var showTransactionPanel by remember { mutableStateOf(false) }
-
-                    val navigate: (String) -> Unit = { currentScreen = it }
-
-                    // System back button returns to Home from any other screen
-                    BackHandler(enabled = currentScreen != "home") {
-                        currentScreen = "home"
+                Surface(
+                    modifier = Modifier.fillMaxSize()
+                ) {
+                    var currentScreen by remember {
+                        mutableStateOf("home")
                     }
 
-                    Box(modifier = Modifier.fillMaxSize()) {
+                    var showTransactionPanel by remember {
+                        mutableStateOf(false)
+                    }
+
+                    val navigate: (String) -> Unit = {
+                        currentScreen = it
+                    }
+
+                    // System back button
+                    BackHandler(
+                        enabled = currentScreen != "home" || showTransactionPanel
+                    ) {
+                        if (showTransactionPanel) {
+                            showTransactionPanel = false
+                        } else {
+                            currentScreen = "home"
+                        }
+                    }
+
+                    Box(
+                        modifier = Modifier.fillMaxSize()
+                    ) {
                         when (currentScreen) {
+
                             "transactions" -> TransactionsScreen(
-                                onAddClick = { showTransactionPanel = true },
-                                onNavigateToInsights = { currentScreen = "insights" },
+                                onAddClick = {
+                                    showTransactionPanel = true
+                                },
+                                onNavigateToInsights = {
+                                    currentScreen = "insights"
+                                },
                                 onNavigate = navigate
                             )
 
                             "income" -> IncomeScreen(
-                                onBackClick = { currentScreen = "home" },
+                                onBackClick = {
+                                    currentScreen = "home"
+                                },
                                 onNavigate = navigate
                             )
 
                             "expenses" -> ExpensesScreen(
-                                onBackClick = { currentScreen = "home" },
+                                onBackClick = {
+                                    currentScreen = "home"
+                                },
                                 onNavigate = navigate
                             )
 
+                            "addTransaction" -> TransactionsInfoScreen(
+                                initialType = "Expense",
+                                onBackClick = {
+                                    currentScreen = "home"
+                                }
+                            )
+
                             "insights" -> InsightsScreen(
-                                onNavigateToIncome = { currentScreen = "income" },
-                                onNavigateToExpenses = { currentScreen = "expenses" },
-                                onNavigateToAccounts = { currentScreen = "accounts" },
-                                onBackClick = { currentScreen = "home" },
+                                onNavigateToIncome = {
+                                    currentScreen = "income"
+                                },
+                                onNavigateToExpenses = {
+                                    currentScreen = "expenses"
+                                },
+                                onNavigateToAccounts = {
+                                    currentScreen = "accounts"
+                                },
+                                onBackClick = {
+                                    currentScreen = "home"
+                                },
                                 onNavigate = navigate
                             )
 
@@ -63,23 +106,35 @@ class MainActivity : ComponentActivity() {
                                     Account("Investments", "12,345"),
                                     Account("Cash", "12,345"),
                                 ),
-                                onBackClick = { currentScreen = "home" },
+                                onBackClick = {
+                                    currentScreen = "home"
+                                },
                                 onNavigate = navigate
                             )
 
                             else -> HomeScreen(
-                                onNavigateToIncome = { currentScreen = "income" },
-                                onNavigateToExpenses = { currentScreen = "expenses" },
-                                onNavigateToInsights = { currentScreen = "insights" },
+                                onNavigateToIncome = {
+                                    currentScreen = "income"
+                                },
+                                onNavigateToExpenses = {
+                                    currentScreen = "expenses"
+                                },
+                                onNavigateToInsights = {
+                                    currentScreen = "insights"
+                                },
+                                onAddClick = {
+                                    currentScreen = "addTransaction"
+                                },
                                 onNavigate = navigate
                             )
                         }
 
-                        // Add-transaction form slides in over whichever screen is showing.
-                        // Placed after the BackHandler above so it takes priority.
+                        // Existing transaction side panel
                         TransactionsSidePanel(
                             visible = showTransactionPanel,
-                            onDismiss = { showTransactionPanel = false }
+                            onDismiss = {
+                                showTransactionPanel = false
+                            }
                         )
                     }
                 }

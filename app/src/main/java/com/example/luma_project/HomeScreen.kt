@@ -6,6 +6,8 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -23,6 +25,7 @@ fun HomeScreen(
     onNavigateToIncome: () -> Unit = {},
     onNavigateToExpenses: () -> Unit = {},
     onNavigateToInsights: () -> Unit = {},
+    onAddClick: () -> Unit = {},
     onNavigate: (String) -> Unit = {},
 ) {
     val black = Color(0xFF222222)
@@ -52,7 +55,21 @@ fun HomeScreen(
                 )
             )
         },
-        bottomBar = { AppBottomBar("home", onNavigate) },
+        bottomBar = {
+            AppBottomBar("home", onNavigate)
+        },
+        floatingActionButton = {
+            FloatingActionButton(
+                onClick = onAddClick,
+                containerColor = Color(0xFF6750A4),
+                contentColor = Color.White
+            ) {
+                Icon(
+                    imageVector = Icons.Filled.Add,
+                    contentDescription = "Add transaction"
+                )
+            }
+        },
         containerColor = Color.White
     ) { innerPadding ->
 
@@ -78,12 +95,14 @@ fun HomeScreen(
 
             Spacer(modifier = Modifier.height(38.dp))
 
-            // AI Summary card (opens Insights)
+            // AI Summary card
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(151.dp)
-                    .clickable { onNavigateToInsights() }
+                    .clickable {
+                        onNavigateToInsights()
+                    }
                     .border(
                         width = 1.dp,
                         color = Color.LightGray.copy(alpha = 0.6f),
@@ -92,7 +111,6 @@ fun HomeScreen(
                     .padding(20.dp),
                 verticalAlignment = Alignment.Top
             ) {
-
                 Text(
                     text = "ⓘ",
                     fontSize = 27.sp,
@@ -121,19 +139,10 @@ fun HomeScreen(
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            // Month so far chart card
+            // Month so far chart
             MonthSoFarChartCard()
 
             Spacer(modifier = Modifier.height(32.dp))
-
-            // Income and Expenditure buttons
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceEvenly
-            ) {
-                HomeButton("Income", onNavigateToIncome)
-                HomeButton("Expenditure", onNavigateToExpenses)
-            }
         }
     }
 }
@@ -165,6 +174,7 @@ fun MonthSoFarChartCard() {
                 fontWeight = FontWeight.Bold,
                 color = black
             )
+
             Text(
                 text = "€0.00",
                 fontSize = 16.sp,
@@ -185,9 +195,11 @@ fun MonthSoFarChartCard() {
         ) {
             Canvas(modifier = Modifier.fillMaxSize()) {
                 val barWidth = size.width / (dataPoints.size * 2 - 1)
+
                 dataPoints.forEachIndexed { index, value ->
                     val left = index * (barWidth * 2)
                     val top = size.height * (1f - value)
+
                     drawRect(
                         color = Color(0xFF292929),
                         topLeft = Offset(left, top),
@@ -233,7 +245,7 @@ fun SummaryItem(title: String, amount: String) {
     }
 }
 
-// Home buttons
+// Home button (kept in case it is used elsewhere)
 @Composable
 fun HomeButton(text: String, onClick: () -> Unit = {}) {
     Button(

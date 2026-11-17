@@ -49,11 +49,17 @@ private val RowIconColor = Color(0xFF49454F)
 
 @Composable
 fun TransactionsInfoScreen(
+    initialType: String = "Expense",
     onBackClick: () -> Unit = {},
+    onSaveClick: (String, String, String) -> Unit = { _, _, _ -> }
 ) {
-    var type by remember { mutableStateOf("Expense") }
+    var type by remember(initialType) {
+        mutableStateOf(initialType)
+    }
+
     var amount by remember { mutableStateOf("") }
     var notes by remember { mutableStateOf("") }
+
 
     Scaffold(
         containerColor = Color.White,
