@@ -1,10 +1,11 @@
 package com.example.luma_project.data
 
 data class Transaction(
-    val title: String,
-    val category: String,
-    val amount: Double,
-    val day: Int,
-    val month: String = "Oct",
-    val isIncome: Boolean,
+    val transactionID: String,
+    val userID: String,
+    var amount: Double,
+    var catagory: String,
+    var isExpense: Boolean,
+    val accountID: String,
+    val recurringID: String,
 )
