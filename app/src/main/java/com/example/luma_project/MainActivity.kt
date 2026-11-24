@@ -1,4 +1,3 @@
-
 package com.example.luma_project
 
 import android.os.Bundle
@@ -10,8 +9,9 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import java.util.Locale
+import com.google.firebase.auth.FirebaseAuth
 
 class MainActivity : ComponentActivity() {
 
@@ -24,12 +24,20 @@ class MainActivity : ComponentActivity() {
             MaterialTheme {
                 Surface(modifier = Modifier.fillMaxSize()) {
                     val viewModel: FinanceViewModel = viewModel()
-                    var currentScreen by remember { mutableStateOf("home") }
+                    val currentUser = auth.currentUser
+                    var currentScreen by remember {
+                        mutableStateOf(
+                            if (currentUser != null && currentUser.isEmailVerified) "home" else "login"
+                        )
+                    }
                     var showTransactionPanel by remember { mutableStateOf(false) }
+                    var isLoading by remember { mutableStateOf(false) }
 
                     var verificationEmail by remember {
                         mutableStateOf("")
                     }
+
+                    val navigate: (String) -> Unit = { currentScreen = it }
 
                     BackHandler(enabled = currentScreen != "home") {
                         currentScreen = "home"
@@ -44,14 +52,12 @@ class MainActivity : ComponentActivity() {
                             "login" -> LoginScreen(
                                 isLoading = isLoading,
                                 onSignUp = { email, password ->
-
                                     isLoading = true
 
                                     auth.createUserWithEmailAndPassword(
                                         email.trim(),
                                         password
                                     ).addOnCompleteListener { task ->
-
                                         isLoading = false
 
                                         if (task.isSuccessful) {
@@ -59,7 +65,6 @@ class MainActivity : ComponentActivity() {
 
                                             user?.sendEmailVerification()
                                                 ?.addOnCompleteListener { emailTask ->
-
                                                     if (emailTask.isSuccessful) {
                                                         verificationEmail = email.trim()
                                                         currentScreen = "verifyEmail"
@@ -83,14 +88,12 @@ class MainActivity : ComponentActivity() {
                                     }
                                 },
                                 onLogin = { email, password ->
-
                                     isLoading = true
 
                                     auth.signInWithEmailAndPassword(
                                         email.trim(),
                                         password
                                     ).addOnCompleteListener { task ->
-
                                         isLoading = false
 
                                         if (task.isSuccessful) {
@@ -98,7 +101,6 @@ class MainActivity : ComponentActivity() {
 
                                             user?.reload()
                                                 ?.addOnCompleteListener { reloadTask ->
-
                                                     if (reloadTask.isSuccessful &&
                                                         auth.currentUser?.isEmailVerified == true
                                                     ) {
@@ -144,7 +146,6 @@ class MainActivity : ComponentActivity() {
                                     onClick = {
                                         auth.currentUser?.reload()
                                             ?.addOnCompleteListener { task ->
-
                                                 if (task.isSuccessful &&
                                                     auth.currentUser?.isEmailVerified == true
                                                 ) {
@@ -224,10 +225,12 @@ class MainActivity : ComponentActivity() {
 
                             // ADD TRANSACTION SCREEN
                             "addTransaction" -> TransactionsInfoScreen(
-                                initialType = "Expense",
-                                onBackClick = {
+                                accounts = viewModel.user.accounts,
+                                onSaveTransaction = { accId, title, cat, amt, isExp, day, month, recurring ->
+                                    viewModel.addTransaction(accId, title, cat, amt, isExp, day, month, recurring)
                                     currentScreen = "home"
-                                }
+                                },
+                                onBackClick = { currentScreen = "home" }
                             )
 
                             // INSIGHTS SCREEN
