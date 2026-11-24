@@ -10,8 +10,8 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
-import com.google.firebase.auth.FirebaseAuth
+import androidx.lifecycle.viewmodel.compose.viewModel
+import java.util.Locale
 
 class MainActivity : ComponentActivity() {
 
@@ -22,41 +22,17 @@ class MainActivity : ComponentActivity() {
 
         setContent {
             MaterialTheme {
-                Surface(
-                    modifier = Modifier.fillMaxSize()
-                ) {
-                    var currentScreen by remember {
-                        mutableStateOf("login")
-                    }
-
-                    var showTransactionPanel by remember {
-                        mutableStateOf(false)
-                    }
+                Surface(modifier = Modifier.fillMaxSize()) {
+                    val viewModel: FinanceViewModel = viewModel()
+                    var currentScreen by remember { mutableStateOf("home") }
+                    var showTransactionPanel by remember { mutableStateOf(false) }
 
                     var verificationEmail by remember {
                         mutableStateOf("")
                     }
 
-                    var isLoading by remember {
-                        mutableStateOf(false)
-                    }
-
-                    val navigate: (String) -> Unit = {
-                        currentScreen = it
-                    }
-
-                    BackHandler(
-                        enabled = (currentScreen != "home" &&
-                                currentScreen != "login") ||
-                                showTransactionPanel
-                    ) {
-                        if (showTransactionPanel) {
-                            showTransactionPanel = false
-                        } else if (currentScreen == "verifyEmail") {
-                            currentScreen = "login"
-                        } else {
-                            currentScreen = "home"
-                        }
+                    BackHandler(enabled = currentScreen != "home") {
+                        currentScreen = "home"
                     }
 
                     Box(
@@ -226,28 +202,23 @@ class MainActivity : ComponentActivity() {
 
                             // TRANSACTIONS SCREEN
                             "transactions" -> TransactionsScreen(
-                                onAddClick = {
-                                    showTransactionPanel = true
-                                },
-                                onNavigateToInsights = {
-                                    currentScreen = "insights"
-                                },
+                                viewModel = viewModel,
+                                onAddClick = { showTransactionPanel = true },
+                                onNavigateToInsights = { currentScreen = "insights" },
                                 onNavigate = navigate
                             )
 
                             // INCOME SCREEN
                             "income" -> IncomeScreen(
-                                onBackClick = {
-                                    currentScreen = "home"
-                                },
+                                viewModel = viewModel,
+                                onBackClick = { currentScreen = "home" },
                                 onNavigate = navigate
                             )
 
                             // EXPENSES SCREEN
                             "expenses" -> ExpensesScreen(
-                                onBackClick = {
-                                    currentScreen = "home"
-                                },
+                                viewModel = viewModel,
+                                onBackClick = { currentScreen = "home" },
                                 onNavigate = navigate
                             )
 
@@ -261,60 +232,39 @@ class MainActivity : ComponentActivity() {
 
                             // INSIGHTS SCREEN
                             "insights" -> InsightsScreen(
-                                onNavigateToIncome = {
-                                    currentScreen = "income"
-                                },
-                                onNavigateToExpenses = {
-                                    currentScreen = "expenses"
-                                },
-                                onNavigateToAccounts = {
-                                    currentScreen = "accounts"
-                                },
-                                onBackClick = {
-                                    currentScreen = "home"
-                                },
+                                viewModel = viewModel,
+                                onNavigateToIncome = { currentScreen = "income" },
+                                onNavigateToExpenses = { currentScreen = "expenses" },
+                                onNavigateToAccounts = { currentScreen = "accounts" },
+                                onBackClick = { currentScreen = "home" },
                                 onNavigate = navigate
                             )
 
                             // ACCOUNTS SCREEN
                             "accounts" -> AccountsScreen(
-                                netWorth = "123,456",
-                                accounts = listOf(
-                                    Account("Checking", "12,345"),
-                                    Account("Savings", "12,345"),
-                                    Account("Credit Card", "12,345"),
-                                    Account("Investments", "12,345"),
-                                    Account("Cash", "12,345")
-                                ),
-                                onBackClick = {
-                                    currentScreen = "home"
-                                },
+                                viewModel = viewModel,
+                                onBackClick = { currentScreen = "home" },
                                 onNavigate = navigate
                             )
 
                             // HOME SCREEN
                             else -> HomeScreen(
-                                onNavigateToIncome = {
-                                    currentScreen = "income"
-                                },
-                                onNavigateToExpenses = {
-                                    currentScreen = "expenses"
-                                },
-                                onNavigateToInsights = {
-                                    currentScreen = "insights"
-                                },
-                                onAddClick = {
-                                    currentScreen = "addTransaction"
-                                },
+                                viewModel = viewModel,
+                                onNavigateToIncome = { currentScreen = "income" },
+                                onNavigateToExpenses = { currentScreen = "expenses" },
+                                onNavigateToInsights = { currentScreen = "insights" },
                                 onNavigate = navigate
                             )
                         }
 
                         TransactionsSidePanel(
                             visible = showTransactionPanel,
-                            onDismiss = {
+                            accounts = viewModel.user.accounts,
+                            onAddTransaction = { accId, title, cat, amt, isExp, day, month, recurring ->
+                                viewModel.addTransaction(accId, title, cat, amt, isExp, day, month, recurring)
                                 showTransactionPanel = false
-                            }
+                            },
+                            onDismiss = { showTransactionPanel = false }
                         )
                     }
                 }

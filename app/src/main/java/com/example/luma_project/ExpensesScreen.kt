@@ -14,6 +14,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import java.util.Locale
+import kotlin.math.abs
 
 data class ExpenseModel(
     val title: String,
@@ -25,20 +27,19 @@ data class ExpenseModel(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ExpensesScreen(
+    viewModel: FinanceViewModel,
     onBackClick: () -> Unit = {},
     onNavigate: (String) -> Unit = {},
 ) {
     val black = Color(0xFF222222)
     val grey = Color(0xFF888888)
 
-    val expenses = listOf(
-        ExpenseModel("Supermarket", "Groceries", "€64.50", "Oct 24"),
-        ExpenseModel("Electric Bill", "Utilities", "€85.00", "Oct 22"),
-        ExpenseModel("Coffee Shop", "Food & Drink", "€4.20", "Oct 21"),
-        ExpenseModel("Public Transport", "Travel", "€35.00", "Oct 20"),
-        ExpenseModel("Online Shopping", "Retail", "€49.99", "Oct 18"),
-        ExpenseModel("Restaurant", "Food & Drink", "€52.00", "Oct 15")
-    )
+    val expenses = viewModel.user.accounts.flatMap { acc ->
+        acc.transactions.filter { it.isExpense }.map {
+            ExpenseModel(it.title, it.catagory, String.format(Locale.US, "€%,.2f", abs(it.amount)), "${it.month} ${"%02d".format(it.day)}")
+        }
+    }
+    val totalExpensesStr = String.format(Locale.US, "€%,.2f", viewModel.totalExpenditure)
 
     Scaffold(
         topBar = {
@@ -83,7 +84,7 @@ fun ExpensesScreen(
                 color = grey
             )
             Text(
-                text = "€290.69",
+                text = totalExpensesStr,
                 fontSize = 28.sp,
                 fontWeight = FontWeight.Bold,
                 color = Color(0xFFC62828)
@@ -100,12 +101,18 @@ fun ExpensesScreen(
 
             Spacer(modifier = Modifier.height(12.dp))
 
-            LazyColumn(
-                verticalArrangement = Arrangement.spacedBy(12.dp),
-                modifier = Modifier.fillMaxSize()
-            ) {
-                items(expenses) { expense ->
-                    ExpenseRowItem(expense)
+            if (expenses.isEmpty()) {
+                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.TopCenter) {
+                    Text("No expense transactions found", color = grey, modifier = Modifier.padding(top = 24.dp))
+                }
+            } else {
+                LazyColumn(
+                    verticalArrangement = Arrangement.spacedBy(12.dp),
+                    modifier = Modifier.fillMaxSize()
+                ) {
+                    items(expenses) { expense ->
+                        ExpenseRowItem(expense)
+                    }
                 }
             }
         }

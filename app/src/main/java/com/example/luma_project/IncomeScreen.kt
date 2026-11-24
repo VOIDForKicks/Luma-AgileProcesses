@@ -14,6 +14,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import java.util.Locale
+import kotlin.math.abs
 
 data class IncomeModel(
     val title: String,
@@ -25,17 +27,19 @@ data class IncomeModel(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun IncomeScreen(
+    viewModel: FinanceViewModel,
     onBackClick: () -> Unit = {},
     onNavigate: (String) -> Unit = {},
 ) {
     val black = Color(0xFF222222)
     val grey = Color(0xFF888888)
 
-    val incomes = listOf(
-        IncomeModel("Monthly Salary", "Employment", "€3,450.00", "Oct 01"),
-        IncomeModel("Freelance Project", "Side Hustle", "€650.00", "Oct 12"),
-        IncomeModel("Dividend Payout", "Investments", "€75.50", "Oct 19")
-    )
+    val incomes = viewModel.user.accounts.flatMap { acc ->
+        acc.transactions.filter { !it.isExpense }.map {
+            IncomeModel(it.title, it.catagory, String.format(Locale.US, "€%,.2f", abs(it.amount)), "${it.month} ${"%02d".format(it.day)}")
+        }
+    }
+    val totalIncomeStr = String.format(Locale.US, "€%,.2f", viewModel.totalIncome)
 
     Scaffold(
         topBar = {
@@ -80,7 +84,7 @@ fun IncomeScreen(
                 color = grey
             )
             Text(
-                text = "€4,175.50",
+                text = totalIncomeStr,
                 fontSize = 28.sp,
                 fontWeight = FontWeight.Bold,
                 color = Color(0xFF2E7D32)
@@ -97,12 +101,18 @@ fun IncomeScreen(
 
             Spacer(modifier = Modifier.height(12.dp))
 
-            LazyColumn(
-                verticalArrangement = Arrangement.spacedBy(12.dp),
-                modifier = Modifier.fillMaxSize()
-            ) {
-                items(incomes) { income ->
-                    IncomeRowItem(income)
+            if (incomes.isEmpty()) {
+                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.TopCenter) {
+                    Text("No income transactions found", color = grey, modifier = Modifier.padding(top = 24.dp))
+                }
+            } else {
+                LazyColumn(
+                    verticalArrangement = Arrangement.spacedBy(12.dp),
+                    modifier = Modifier.fillMaxSize()
+                ) {
+                    items(incomes) { income ->
+                        IncomeRowItem(income)
+                    }
                 }
             }
         }

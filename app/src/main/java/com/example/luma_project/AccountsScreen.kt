@@ -2,82 +2,196 @@ package com.example.luma_project
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.outlined.ArrowCircleLeft
 import androidx.compose.material.icons.outlined.StarBorder
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import java.util.Locale
 
 // ---------- Model ----------
 
 data class Account(val name: String, val balance: String)
 
-// ---------- Colors (taken from the design) ----------
+// ---------- Colors ----------
 
 private val CardBackground = Color(0xFFFDF7FF)
 private val CardBorder = Color(0xFFCAC4D0)
 private val AvatarBackground = Color(0xFFE8DEF8)
 private val AvatarText = Color(0xFF4F378B)
 private val TextPrimary = Color(0xFF1D1B20)
+private val PurpleAccent = Color(0xFF6750A4)
 
 // ---------- Screen ----------
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AccountsScreen(
-    netWorth: String,
-    accounts: List<Account>,
+    viewModel: FinanceViewModel,
     onBackClick: () -> Unit = {},
     onNavigate: (String) -> Unit = {},
 ) {
+    var showAddDialog by remember { mutableStateOf(false) }
+    val netWorthStr = String.format(Locale.US, "€%,.2f", viewModel.netWorth)
+    val accounts = viewModel.user.accounts.map { Account(it.aName, String.format(Locale.US, "€%,.2f", it.Balance)) }
+
     Scaffold(
         containerColor = Color.White,
         bottomBar = { AppBottomBar("accounts", onNavigate) },
+        floatingActionButton = {
+            FloatingActionButton(
+                onClick = { showAddDialog = true },
+                containerColor = PurpleAccent,
+                contentColor = Color.White,
+            ) {
+                Icon(Icons.Filled.Add, contentDescription = "Add Account")
+            }
+        }
     ) { innerPadding ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
         ) {
-            Header(netWorth = netWorth, onBackClick = onBackClick)
+            Header(netWorth = netWorthStr, onBackClick = onBackClick)
 
-            LazyColumn(
-                modifier = Modifier.fillMaxSize(),
-                contentPadding = PaddingValues(horizontal = 8.dp, vertical = 8.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp),
-            ) {
-                items(accounts) { account ->
-                    AccountCard(account)
+            if (accounts.isEmpty()) {
+                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.TopCenter) {
+                    Text("No accounts found. Tap '+' to create one.", color = Color.Gray, modifier = Modifier.padding(top = 32.dp))
+                }
+            } else {
+                LazyColumn(
+                    modifier = Modifier.fillMaxSize(),
+                    contentPadding = PaddingValues(horizontal = 8.dp, vertical = 8.dp),
+                    verticalArrangement = Arrangement.spacedBy(16.dp),
+                ) {
+                    items(accounts) { account ->
+                        AccountCard(account)
+                    }
                 }
             }
         }
+
+        if (showAddDialog) {
+            AddAccountDialog(
+                onDismiss = { showAddDialog = false },
+                onConfirm = { name, type, balance, jointEmail ->
+                    viewModel.addAccount(name, type, balance, jointEmail)
+                    showAddDialog = false
+                }
+            )
+        }
     }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun AddAccountDialog(onDismiss: () -> Unit, onConfirm: (String, String, Double, String) -> Unit) {
+    var name by remember { mutableStateOf("") }
+    var selectedType by remember { mutableStateOf("Daily Spending") }
+    var balanceStr by remember { mutableStateOf("") }
+    var jointEmail by remember { mutableStateOf("") }
+    var expanded by remember { mutableStateOf(false) }
+
+    val accountTypes = listOf("Daily Spending", "Savings", "Debt")
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("New Account", fontWeight = FontWeight.Bold) },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                OutlinedTextField(
+                    value = name,
+                    onValueChange = { name = it },
+                    label = { Text("Account Name") },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth()
+                )
+
+                ExposedDropdownMenuBox(
+                    expanded = expanded,
+                    onExpandedChange = { expanded = !expanded },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    OutlinedTextField(
+                        value = selectedType,
+                        onValueChange = {},
+                        readOnly = true,
+                        label = { Text("Account Type") },
+                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
+                        modifier = Modifier
+                            .menuAnchor()
+                            .fillMaxWidth()
+                    )
+                    ExposedDropdownMenu(
+                        expanded = expanded,
+                        onDismissRequest = { expanded = false }
+                    ) {
+                        accountTypes.forEach { typeOption ->
+                            DropdownMenuItem(
+                                text = { Text(typeOption) },
+                                onClick = {
+                                    selectedType = typeOption
+                                    expanded = false
+                                }
+                            )
+                        }
+                    }
+                }
+
+                OutlinedTextField(
+                    value = balanceStr,
+                    onValueChange = { balanceStr = it },
+                    label = { Text("Initial Balance") },
+                    singleLine = true,
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                    modifier = Modifier.fillMaxWidth()
+                )
+
+                OutlinedTextField(
+                    value = jointEmail,
+                    onValueChange = { jointEmail = it },
+                    label = { Text("Joint User Email (Optional)") },
+                    singleLine = true,
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
+        },
+        confirmButton = {
+            Button(
+                onClick = {
+                    val bal = balanceStr.toDoubleOrNull() ?: 0.0
+                    if (name.isNotBlank()) {
+                        onConfirm(name, selectedType, bal, jointEmail.trim())
+                    }
+                },
+                colors = ButtonDefaults.buttonColors(containerColor = PurpleAccent)
+            ) {
+                Text("Add")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Cancel")
+            }
+        }
+    )
 }
 
 @Composable
@@ -143,7 +257,6 @@ private fun AccountCard(account: Account) {
                 .padding(horizontal = 16.dp, vertical = 18.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            // Avatar with first letter
             Box(
                 modifier = Modifier
                     .size(40.dp)
@@ -173,18 +286,5 @@ private fun AccountCard(account: Account) {
                 )
             }
         }
-    }
-}
-
-// ---------- Preview ----------
-
-@Preview(showBackground = true)
-@Composable
-private fun AccountsScreenPreview() {
-    MaterialTheme {
-        AccountsScreen(
-            netWorth = "123,456",
-            accounts = List(5) { Account("Account Name", "12,345") },
-        )
     }
 }

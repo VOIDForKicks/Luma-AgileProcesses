@@ -2,17 +2,7 @@ package com.example.luma_project
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
@@ -20,55 +10,17 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.outlined.Search
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.FloatingActionButton
-import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.OutlinedTextFieldDefaults
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Tab
-import androidx.compose.material3.TabRow
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.luma_project.data.Transaction
 import java.util.Locale
-
-// ---------- Model ----------
-
-data class Transaction(
-    val title: String,
-    val category: String,
-    val amount: Double,
-    val day: Int,
-    val month: String = "Oct",
-    val isIncome: Boolean,
-)
-
-// Placeholder data (same entries as the Income and Expenses screens)
-val sampleTransactions = listOf(
-    Transaction("Monthly Salary", "Employment", 3450.00, 1, isIncome = true),
-    Transaction("Freelance Project", "Side Hustle", 650.00, 12, isIncome = true),
-    Transaction("Dividend Payout", "Investments", 75.50, 19, isIncome = true),
-    Transaction("Supermarket", "Groceries", 64.50, 24, isIncome = false),
-    Transaction("Electric Bill", "Utilities", 85.00, 22, isIncome = false),
-    Transaction("Coffee Shop", "Food & Drink", 4.20, 21, isIncome = false),
-    Transaction("Public Transport", "Travel", 35.00, 20, isIncome = false),
-    Transaction("Online Shopping", "Retail", 49.99, 18, isIncome = false),
-    Transaction("Restaurant", "Food & Drink", 52.00, 15, isIncome = false),
-)
+import kotlin.math.abs
 
 // ---------- Colors ----------
 
@@ -86,11 +38,12 @@ private val TextGrey = Color(0xFF888888)
 
 @Composable
 fun TransactionsScreen(
-    transactions: List<Transaction> = sampleTransactions,
+    viewModel: FinanceViewModel,
     onAddClick: () -> Unit = {},
     onNavigateToInsights: () -> Unit = {},
     onNavigate: (String) -> Unit = {},
 ) {
+    val transactions = viewModel.user.accounts.flatMap { it.transactions }
     val tabs = listOf("All", "Expenses", "Income", "AI Overview")
     var selectedTab by remember { mutableIntStateOf(0) }
     var query by remember { mutableStateOf("") }
@@ -98,7 +51,7 @@ fun TransactionsScreen(
     val visible = transactions
         .filter {
             when (selectedTab) {
-                1 -> !it.isIncome
+                1 -> it.isExpense
                 2 -> it.isIncome
                 else -> true
             }
@@ -108,7 +61,7 @@ fun TransactionsScreen(
                     it.title.contains(query, ignoreCase = true) ||
                     it.category.contains(query, ignoreCase = true)
         }
-        .sortedByDescending { it.day } // most recent first
+        .sortedByDescending { it.day }
 
     Scaffold(
         containerColor = Color.White,
@@ -128,7 +81,6 @@ fun TransactionsScreen(
                 .fillMaxSize()
                 .padding(innerPadding)
         ) {
-            // Tabs
             TabRow(
                 selectedTabIndex = selectedTab,
                 containerColor = Color.White,
@@ -138,7 +90,6 @@ fun TransactionsScreen(
                     Tab(
                         selected = selectedTab == index,
                         onClick = {
-                            // AI Overview opens the Insights screen
                             if (index == 3) onNavigateToInsights() else selectedTab = index
                         },
                         text = { Text(label, fontSize = 13.sp) },
@@ -146,7 +97,6 @@ fun TransactionsScreen(
                 }
             }
 
-            // Search
             OutlinedTextField(
                 value = query,
                 onValueChange = { query = it },
@@ -206,7 +156,6 @@ private fun TransactionRow(transaction: Transaction) {
                 .padding(horizontal = 14.dp, vertical = 14.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            // Avatar with first letter
             Box(
                 modifier = Modifier
                     .size(38.dp)
@@ -241,7 +190,7 @@ private fun TransactionRow(transaction: Transaction) {
 
             Column(horizontalAlignment = Alignment.End) {
                 Text(
-                    text = sign + String.format(Locale.US, "€%,.2f", transaction.amount),
+                    text = sign + String.format(Locale.US, "€%,.2f", abs(transaction.amount)),
                     fontSize = 15.sp,
                     fontWeight = FontWeight.SemiBold,
                     color = amountColor,
@@ -255,12 +204,4 @@ private fun TransactionRow(transaction: Transaction) {
             }
         }
     }
-}
-
-// ---------- Preview ----------
-
-@Preview(showBackground = true)
-@Composable
-private fun TransactionsScreenPreview() {
-    MaterialTheme { TransactionsScreen() }
 }

@@ -18,10 +18,14 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.luma_project.data.Transaction
+import java.util.Locale
+import kotlin.math.abs
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(
+    viewModel: FinanceViewModel,
     onNavigateToIncome: () -> Unit = {},
     onNavigateToExpenses: () -> Unit = {},
     onNavigateToInsights: () -> Unit = {},
@@ -30,6 +34,11 @@ fun HomeScreen(
 ) {
     val black = Color(0xFF222222)
     val grey = Color(0xFF888888)
+
+    val incomeStr = String.format(Locale.US, "€%,.2f", viewModel.totalIncome)
+    val balanceStr = String.format(Locale.US, "€%,.2f", viewModel.netWorth)
+    val expenditureStr = String.format(Locale.US, "€%,.2f", viewModel.totalExpenditure)
+    val transactions = viewModel.user.accounts.flatMap { it.transactions }
 
     Scaffold(
         topBar = {
@@ -88,9 +97,9 @@ fun HomeScreen(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                SummaryItem("Income", "€0.00")
-                SummaryItem("Balance", "€0.00")
-                SummaryItem("Expenditure", "€0.00")
+                SummaryItem("Income", incomeStr)
+                SummaryItem("Balance", balanceStr)
+                SummaryItem("Expenditure", expenditureStr)
             }
 
             Spacer(modifier = Modifier.height(38.dp))
@@ -139,8 +148,8 @@ fun HomeScreen(
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            // Month so far chart
-            MonthSoFarChartCard()
+            // Month so far chart card
+            MonthSoFarChartCard(expenditureStr, transactions)
 
             Spacer(modifier = Modifier.height(32.dp))
         }
@@ -149,7 +158,7 @@ fun HomeScreen(
 
 // Month so far chart card
 @Composable
-fun MonthSoFarChartCard() {
+fun MonthSoFarChartCard(total: String, transactions: List<Transaction>) {
     val black = Color(0xFF222222)
     val grey = Color(0xFF888888)
 
@@ -176,7 +185,7 @@ fun MonthSoFarChartCard() {
             )
 
             Text(
-                text = "€0.00",
+                text = total,
                 fontSize = 16.sp,
                 fontWeight = FontWeight.SemiBold,
                 color = black
@@ -185,7 +194,13 @@ fun MonthSoFarChartCard() {
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        val dataPoints = listOf(0.2f, 0.5f, 0.3f, 0.8f, 0.4f, 0.6f, 0.9f)
+        // Compute dynamic data points based on expense transactions
+        val expenseTxs = transactions.filter { it.isExpense }
+        val maxAmount = expenseTxs.maxOfOrNull { abs(it.amount) }?.coerceAtLeast(100.0) ?: 100.0
+        val dataPoints = listOf(1, 5, 10, 15, 20, 25, 30).map { day ->
+            val match = expenseTxs.filter { it.day in (day..day + 4) }.sumOf { abs(it.amount) }
+            (match / maxAmount).toFloat().coerceIn(0.1f, 1f)
+        }
         val days = listOf("1", "5", "10", "15", "20", "25", "30")
 
         Box(
