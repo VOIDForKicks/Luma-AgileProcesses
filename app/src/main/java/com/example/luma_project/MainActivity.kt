@@ -10,6 +10,8 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.lifecycle.viewmodel.compose.viewModel
+import java.util.Locale
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -18,12 +20,12 @@ class MainActivity : ComponentActivity() {
         setContent {
             MaterialTheme {
                 Surface(modifier = Modifier.fillMaxSize()) {
+                    val viewModel: FinanceViewModel = viewModel()
                     var currentScreen by remember { mutableStateOf("home") }
                     var showTransactionPanel by remember { mutableStateOf(false) }
 
                     val navigate: (String) -> Unit = { currentScreen = it }
 
-                    // System back button returns to Home from any other screen
                     BackHandler(enabled = currentScreen != "home") {
                         currentScreen = "home"
                     }
@@ -31,22 +33,26 @@ class MainActivity : ComponentActivity() {
                     Box(modifier = Modifier.fillMaxSize()) {
                         when (currentScreen) {
                             "transactions" -> TransactionsScreen(
+                                viewModel = viewModel,
                                 onAddClick = { showTransactionPanel = true },
                                 onNavigateToInsights = { currentScreen = "insights" },
                                 onNavigate = navigate
                             )
 
                             "income" -> IncomeScreen(
+                                viewModel = viewModel,
                                 onBackClick = { currentScreen = "home" },
                                 onNavigate = navigate
                             )
 
                             "expenses" -> ExpensesScreen(
+                                viewModel = viewModel,
                                 onBackClick = { currentScreen = "home" },
                                 onNavigate = navigate
                             )
 
                             "insights" -> InsightsScreen(
+                                viewModel = viewModel,
                                 onNavigateToIncome = { currentScreen = "income" },
                                 onNavigateToExpenses = { currentScreen = "expenses" },
                                 onNavigateToAccounts = { currentScreen = "accounts" },
@@ -55,19 +61,13 @@ class MainActivity : ComponentActivity() {
                             )
 
                             "accounts" -> AccountsScreen(
-                                netWorth = "123,456",
-                                accounts = listOf(
-                                    Account("Checking", "12,345"),
-                                    Account("Savings", "12,345"),
-                                    Account("Credit Card", "12,345"),
-                                    Account("Investments", "12,345"),
-                                    Account("Cash", "12,345"),
-                                ),
+                                viewModel = viewModel,
                                 onBackClick = { currentScreen = "home" },
                                 onNavigate = navigate
                             )
 
                             else -> HomeScreen(
+                                viewModel = viewModel,
                                 onNavigateToIncome = { currentScreen = "income" },
                                 onNavigateToExpenses = { currentScreen = "expenses" },
                                 onNavigateToInsights = { currentScreen = "insights" },
@@ -75,10 +75,13 @@ class MainActivity : ComponentActivity() {
                             )
                         }
 
-                        // Add-transaction form slides in over whichever screen is showing.
-                        // Placed after the BackHandler above so it takes priority.
                         TransactionsSidePanel(
                             visible = showTransactionPanel,
+                            accounts = viewModel.user.accounts,
+                            onAddTransaction = { accId, title, cat, amt, isExp, day, month, recurring ->
+                                viewModel.addTransaction(accId, title, cat, amt, isExp, day, month, recurring)
+                                showTransactionPanel = false
+                            },
                             onDismiss = { showTransactionPanel = false }
                         )
                     }

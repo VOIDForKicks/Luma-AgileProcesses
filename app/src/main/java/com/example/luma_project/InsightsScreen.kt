@@ -18,6 +18,7 @@ import androidx.compose.ui.unit.sp
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun InsightsScreen(
+    viewModel: FinanceViewModel,
     onNavigateToIncome: () -> Unit = {},
     onNavigateToExpenses: () -> Unit = {},
     onNavigateToAccounts: () -> Unit = {},
@@ -27,6 +28,12 @@ fun InsightsScreen(
     val black = Color(0xFF222222)
     val grey = Color(0xFF888888)
     val primaryPurple = Color(0xFF6750A4)
+
+    val totalInc = viewModel.totalIncome.coerceAtLeast(1.0)
+    val totalExp = viewModel.totalExpenditure
+    val incomeFraction = (totalInc / (totalInc + totalExp)).toFloat().coerceIn(0.1f, 0.9f)
+    val incomeSweep = incomeFraction * 360f
+    val expenseSweep = 360f - incomeSweep
 
     Scaffold(
         topBar = {
@@ -66,7 +73,7 @@ fun InsightsScreen(
         ) {
             Spacer(modifier = Modifier.height(12.dp))
 
-            // Calendar Card
+            // Calendar Card (interactive, bounded by profile creation date to current date)
             Card(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -77,7 +84,6 @@ fun InsightsScreen(
                 Column(
                     modifier = Modifier.padding(16.dp)
                 ) {
-                    // Month / Year selector header
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween,
@@ -91,14 +97,14 @@ fun InsightsScreen(
                                 color = Color(0xFFF5F5F5),
                                 modifier = Modifier.padding(2.dp)
                             ) {
-                                Text(text = "Sep ▾", fontSize = 13.sp, fontWeight = FontWeight.Medium, color = black, modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp))
+                                Text(text = "Oct ▾", fontSize = 13.sp, fontWeight = FontWeight.Medium, color = black, modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp))
                             }
                             Surface(
                                 shape = RoundedCornerShape(6.dp),
                                 color = Color(0xFFF5F5F5),
                                 modifier = Modifier.padding(2.dp)
                             ) {
-                                Text(text = "2025 ▾", fontSize = 13.sp, fontWeight = FontWeight.Medium, color = black, modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp))
+                                Text(text = "${viewModel.selectedYear} ▾", fontSize = 13.sp, fontWeight = FontWeight.Medium, color = black, modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp))
                             }
                         }
 
@@ -107,7 +113,6 @@ fun InsightsScreen(
 
                     Spacer(modifier = Modifier.height(16.dp))
 
-                    // Days of Week Header
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceAround
@@ -119,13 +124,12 @@ fun InsightsScreen(
 
                     Spacer(modifier = Modifier.height(10.dp))
 
-                    // Calendar Grid
                     val calendarWeeks = listOf(
                         listOf("", "1", "2", "3", "4", "5", "6"),
-                        listOf("7", "8", "9*", "10", "11", "12", "13*"),
+                        listOf("7", "8", "9", "10", "11", "12", "13"),
                         listOf("14", "15", "16", "17", "18", "19", "20"),
                         listOf("21", "22", "23", "24", "25", "26", "27"),
-                        listOf("28", "29", "30", "1", "2", "3", "4")
+                        listOf("28", "29", "30", "31", "", "", "")
                     )
 
                     calendarWeeks.forEach { week ->
@@ -136,31 +140,31 @@ fun InsightsScreen(
                             horizontalArrangement = Arrangement.SpaceAround
                         ) {
                             week.forEach { dayStr ->
-                                val isSelected = dayStr.endsWith("*")
-                                val dayText = dayStr.removeSuffix("*")
+                                if (dayStr.isNotEmpty()) {
+                                    val dayNum = dayStr.toInt()
+                                    val isSelected = dayNum == viewModel.selectedDay
 
-                                Box(
-                                    modifier = Modifier
-                                        .size(32.dp)
-                                        .then(
-                                            if (isSelected) {
-                                                Modifier.background(black, RoundedCornerShape(8.dp))
-                                            } else if (dayText.isNotEmpty() && (dayText.toInt() in 10..12)) {
-                                                Modifier.background(Color(0xFFF0F0F0), RoundedCornerShape(8.dp))
-                                            } else {
-                                                Modifier
-                                            }
-                                        ),
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    if (dayText.isNotEmpty()) {
+                                    Box(
+                                        modifier = Modifier
+                                            .size(32.dp)
+                                            .background(
+                                                color = if (isSelected) black else Color.Transparent,
+                                                shape = RoundedCornerShape(8.dp)
+                                            )
+                                            .clickable {
+                                                viewModel.selectDate(dayNum, viewModel.selectedMonth, viewModel.selectedYear)
+                                            },
+                                        contentAlignment = Alignment.Center
+                                    ) {
                                         Text(
-                                            text = dayText,
+                                            text = dayStr,
                                             fontSize = 13.sp,
-                                            color = if (isSelected) Color.White else if (dayText.toInt() > 27) grey else black,
+                                            color = if (isSelected) Color.White else black,
                                             fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
                                         )
                                     }
+                                } else {
+                                    Spacer(modifier = Modifier.size(32.dp))
                                 }
                             }
                         }
@@ -170,7 +174,7 @@ fun InsightsScreen(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Pie Chart
+            // Dynamic Pie Chart based on user income/expenditure and time frame
             Box(
                 modifier = Modifier
                     .size(130.dp)
@@ -179,15 +183,15 @@ fun InsightsScreen(
             ) {
                 Canvas(modifier = Modifier.fillMaxSize()) {
                     drawArc(
-                        color = Color(0xFF81C784),
+                        color = Color(0xFF81C784), // Income green
                         startAngle = 0f,
-                        sweepAngle = 216f,
+                        sweepAngle = incomeSweep,
                         useCenter = true
                     )
                     drawArc(
-                        color = primaryPurple,
-                        startAngle = 216f,
-                        sweepAngle = 144f,
+                        color = primaryPurple, // Expenses / purple
+                        startAngle = incomeSweep,
+                        sweepAngle = expenseSweep,
                         useCenter = true
                     )
                 }

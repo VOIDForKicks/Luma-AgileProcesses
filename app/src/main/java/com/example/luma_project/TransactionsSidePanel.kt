@@ -21,22 +21,19 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
+import com.example.luma_project.data.Account
+import com.example.luma_project.data.Recurring
 
-/**
- * Slides the transaction form in from the right over whatever screen is showing.
- * Tapping the dimmed area, the back arrow, or the phone's back button closes it.
- */
 @Composable
 fun TransactionsSidePanel(
     visible: Boolean,
+    accounts: List<Account>,
+    onAddTransaction: (String, String, String, Double, Boolean, Int, String, Recurring?) -> Unit,
     onDismiss: () -> Unit,
 ) {
-    // Closes the panel before the normal back handling runs
     BackHandler(enabled = visible, onBack = onDismiss)
 
     Box(modifier = Modifier.fillMaxSize()) {
-
-        // Dimmed background
         AnimatedVisibility(
             visible = visible,
             enter = fadeIn(),
@@ -54,7 +51,6 @@ fun TransactionsSidePanel(
             )
         }
 
-        // The panel itself
         AnimatedVisibility(
             visible = visible,
             modifier = Modifier.align(Alignment.CenterEnd),
@@ -69,9 +65,12 @@ fun TransactionsSidePanel(
                 shadowElevation = 8.dp,
                 color = Color.White,
             ) {
-                TransactionsInfoScreen(onBackClick = onDismiss)
+                TransactionsInfoScreen(
+                    accounts = accounts,
+                    onSaveTransaction = onAddTransaction,
+                    onBackClick = onDismiss
+                )
             }
         }
     }
 }
-
