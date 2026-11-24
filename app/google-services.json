@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "459831959460",
+    "project_id": "luma-8450d",
+    "storage_bucket": "luma-8450d.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:459831959460:android:e40dca64fdc86303b8eb31",
+        "android_client_info": {
+          "package_name": "com.example.luma_project"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "459831959460-hqus5capdgfbu9n3jhlmjv5ee82np0j2.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyD5-n7DriSDanvNHYLnEWp5H8BY5x7f3bE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "459831959460-hqus5capdgfbu9n3jhlmjv5ee82np0j2.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
